@@ -1,0 +1,457 @@
+CONTROLLER FILE
+
+package com.example.controller;
+
+import com.example.model.TravelPackage;
+import com.example.response.ApiResponse;
+import com.example.service.TravelPackageService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/packages")
+public class TravelPackageController {
+
+    private final TravelPackageService service;
+
+    public TravelPackageController(TravelPackageService service) {
+        this.service = service;
+    }
+
+    @GetMapping(produces = "application/json")
+    public ResponseEntity<ApiResponse> getAllPackages() {
+        List<TravelPackage> packages = service.getAllPackages();
+        return ResponseEntity.ok(new ApiResponse(true, "All packages retrieved ", packages));
+    }
+
+    @GetMapping(value = "/{id}", produces = "application/json")
+    public ResponseEntity<ApiResponse> getById(@PathVariable Long id) {
+        TravelPackage travelPackage = service.getPackageById(id);
+        return ResponseEntity.ok(new ApiResponse(true, "Package found", travelPackage));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse> create(@Valid @RequestBody TravelPackage travelPackage) {
+        TravelPackage created = service.createPackage(travelPackage);
+        return ResponseEntity.ok( new ApiResponse(true, "Package created successfully", created));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> update(@PathVariable Long id, @Valid @RequestBody TravelPackage travelPackage) {
+        TravelPackage updated = service.updatePackage(id, travelPackage);
+        return ResponseEntity.ok(new ApiResponse(true, "Package updated successfully", updated));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> delete(@PathVariable Long id) {
+        service.deletePackage(id);
+        return ResponseEntity.ok(new ApiResponse(true, "Package deleted successfully", null));
+    }
+}
+
+
+
+TRAVEL PACKAGE MODEL
+
+package com.example.model;
+ 
+import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import lombok.*;
+
+import java.time.LocalDate;
+import java.util.List;
+ 
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class TravelPackage {
+ 
+    
+
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long packageId;
+	
+	@NotNull(message="Agent ID is required")
+	private Long agentId;
+ 
+    @NotBlank(message = "Title is mandatory")
+    private String title;
+ 
+    @NotBlank(message = "Description is mandatory")
+    private String description;
+ 
+    @Min(value = 1, message = "Duration should be at least 1 day")
+    private int duration;
+ 
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than zero")
+    private double price;
+    
+    @Min(value=1, message="MAX capacity should be atleast 1")
+    private int maxCapacity;
+    
+    @NotNull(message="Trip start date is required")
+    private LocalDate tripStartDate;
+    
+    @NotNull(message="Trip end date is required")
+    private LocalDate tripEndDate;
+ 
+    @NotNull(message = "Highlights cannot be null")
+    private List<@NotBlank(message = "Highlight item cannot be blank") String> highlights;
+ 
+    @OneToMany(cascade = CascadeType.ALL)
+    @NotNull(message = "Flights must not be null")
+    private List<@Valid Flight> flights;
+ 
+    @OneToMany(cascade = CascadeType.ALL)
+    @NotNull(message = "Hotels must not be null")
+    private List<@Valid Hotel> hotels;
+ 
+    @OneToMany(cascade = CascadeType.ALL)
+    @NotNull(message = "Sightseeing must not be null")
+    private List<@Valid Sightseeing> sightseeing;
+ 
+    @OneToMany(cascade = CascadeType.ALL)
+    @NotNull(message = "Itinerary must not be null")
+    private List<@Valid Itinerary> itinerary;
+ 
+    @Embedded
+    @Valid
+    private Offer offer;
+    
+    
+
+	
+}
+ 
+
+FLIGHT MODEL
+
+package com.example.model;
+ 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+ 
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Flight {
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+ 
+    @NotBlank(message = "Airline name is required")
+    private String airline;
+ 
+    @NotBlank(message = "From city is required")
+    private String fromCity;
+ 
+    @NotBlank(message = "To city is required")
+    private String toCity;
+ 
+    @NotBlank(message = "Departure time is required")
+    private String departureTime;
+ 
+    @NotBlank(message = "Arrival time is required")
+    private String arrivalTime;
+}
+ 
+
+HOTEL MODEL
+
+
+package com.example.model;
+ 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+ 
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Hotel {
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+ 
+    @NotBlank(message = "Hotel name is required")
+    private String name;
+ 
+    @NotBlank(message = "City is required")
+    private String city;
+ 
+    @DecimalMin(value = "0.0", inclusive = false, message = "Rating must be greater than 0")
+    private double rating;
+ 
+    @Min(value = 1, message = "Number of nights must be at least 1")
+    private int nights;
+ 
+    @DecimalMin(value = "0.0", inclusive = false, message = "Cost per night must be greater than 0")
+    private double costPerNight;
+}
+ 
+
+
+ITINERARY MODEL
+
+
+package com.example.model;
+ 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+ 
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Itinerary {
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+ 
+    @Min(value = 1, message = "Day number must be at least 1")
+    private int dayNumber;
+ 
+    @NotBlank(message = "Activity title is required")
+    private String activityTitle;
+ 
+    @NotBlank(message = "Activity description is required")
+    private String activityDescription;
+}
+ 
+
+
+OFFER
+
+package com.example.model;
+ 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.*;
+import lombok.*;
+ 
+@Embeddable
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Offer {
+ 
+    @NotBlank(message = "Coupon code is required")
+    private String couponCode;
+ 
+    @NotBlank(message = "Offer description is required")
+    @Column(name = "offer_description")
+    private String description;
+ 
+    @Min(value = 0, message = "Discount must be at least 0")
+    @Max(value = 100, message = "Discount must not exceed 100")
+    private int discountPercentage;
+ 
+    private boolean active;
+}
+
+SIGHTSEEING MODEL
+
+package com.example.model;
+ 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+ 
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Sightseeing {
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+ 
+    @NotBlank(message = "Sightseeing location is required")
+    private String location;
+ 
+    @NotBlank(message = "Sightseeing description is required")
+    @Column(name = "sightseeing_description")
+    private String description;
+}
+ 
+
+
+TRAVEL PACKAGE REPOSITORY
+
+package com.example.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.model.TravelPackage;
+
+/**
+ * Repository for TravelPackage entity.
+ */
+public interface TravelPackageRepository extends JpaRepository<TravelPackage, Long> {
+	
+}
+
+API RESPONSE
+
+package com.example.response;
+ 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+ 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ApiResponse {
+    private boolean success;
+    private String message;
+    private Object data;
+}
+
+
+TRAVEL PACKAGE SERVICE
+
+package com.example.service;
+
+import com.example.exception.ResourceNotFoundException;
+import com.example.model.TravelPackage;
+import com.example.repository.TravelPackageRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class TravelPackageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TravelPackageService.class);
+    private final TravelPackageRepository repository;
+
+    public TravelPackageService(TravelPackageRepository repository) {
+        this.repository = repository;
+    }
+
+    // Get all packages
+    public List<TravelPackage> getAllPackages() {
+        logger.info("Fetching all travel packages...");
+        return repository.findAll();
+    }
+
+    // Get package by ID
+    public TravelPackage getPackageById(Long id) {
+        logger.debug("Fetching travel package with ID: {}", id);
+        return repository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Package not found with ID: {}", id);
+                    return new ResourceNotFoundException("Package not found with ID: " + id);
+                });
+    }
+
+    // Create package
+    public TravelPackage createPackage(TravelPackage travelPackage) {
+        logger.info("Creating new travel package: {}", travelPackage.getTitle());
+        return repository.save(travelPackage);
+    }
+
+    // Update package
+    public TravelPackage updatePackage(Long id, TravelPackage updatedPackage) {
+        logger.info("Updating travel package with ID: {}", id);
+        return repository.findById(id)
+                .map(existing -> {
+                    existing.setTitle(updatedPackage.getTitle());
+                    existing.setDescription(updatedPackage.getDescription());
+                    existing.setDuration(updatedPackage.getDuration());
+                    existing.setPrice(updatedPackage.getPrice());
+                    existing.setHighlights(updatedPackage.getHighlights());
+                    existing.setFlights(updatedPackage.getFlights());
+                    existing.setHotels(updatedPackage.getHotels());
+                    existing.setSightseeing(updatedPackage.getSightseeing());
+                    existing.setItinerary(updatedPackage.getItinerary());
+                    existing.setOffer(updatedPackage.getOffer());
+                    logger.info("Package updated successfully with ID: {}", id);
+                    return repository.save(existing);
+                })
+                .orElseThrow(() -> {
+                    logger.warn("Package not found for update with ID: {}", id);
+                    return new ResourceNotFoundException("Package not found with ID: " + id);
+                });
+    }
+
+    // Delete package
+    public void deletePackage(Long id) {
+        logger.info("Attempting to delete travel package with ID: {}", id);
+        if (!repository.existsById(id)) {
+            logger.error("Package not found with ID: {}", id);
+            throw new ResourceNotFoundException("Package not found with ID: " + id);
+        }
+        repository.deleteById(id);
+        logger.info("Package deleted successfully with ID: {}", id);
+    }
+}
+
+TRAVEL PACKAGE MANAGEMENT APPLICATION 
+
+package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+
+@SpringBootApplication
+@EnableDiscoveryClient //Enables Eureka client functionality
+public class TravelPackageManagementApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(TravelPackageManagementApplication.class, args);
+	}
+
+}
+
+APPLICATION PROPERTIES
+
+spring.application.name=travel-package-management
+
+# Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/travel_Package_db
+spring.datasource.username=root
+spring.datasource.password=root
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Hibernate Configuration
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# Server Configuration
+server.port=8082
+
+# Logging Configuration
+logging.level.org.springframework=INFO
+logging.level.com.example.travel=DEBUG
+
+#Eureka Registration
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+eureka.instance.prefer-ip-address=true
+
